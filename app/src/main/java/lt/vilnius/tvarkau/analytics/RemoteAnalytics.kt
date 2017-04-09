@@ -6,6 +6,7 @@ import android.os.Bundle
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.mixpanel.android.mpmetrics.MixpanelAPI
 import lt.vilnius.tvarkau.entity.Problem
+import lt.vilnius.tvarkau.utils.NetworkUtils
 import org.json.JSONObject
 
 class RemoteAnalytics(appContext: Context, private val mixpanelAPI: MixpanelAPI) : Analytics {
@@ -20,6 +21,7 @@ class RemoteAnalytics(appContext: Context, private val mixpanelAPI: MixpanelAPI)
         logEvent(EVENT_APPLY_REPORT_FILTER, params)
     }
 
+
     private val analytics: FirebaseAnalytics by lazy {
         FirebaseAnalytics.getInstance(appContext)
     }
@@ -31,7 +33,19 @@ class RemoteAnalytics(appContext: Context, private val mixpanelAPI: MixpanelAPI)
         analytics.setCurrentScreen(activity, eventName, null)
     }
 
-    override fun trackCloseFragment(name: String) = finishTimeEvent("open_$name")
+    override fun trackCloseFragment(name: String) = logEvent("open_$name", Bundle.EMPTY)
+
+    override fun trackStartRequest() {
+        timeEvent(EVENT_API_REQUEST)
+    }
+
+    override fun trackFinishRequest(responseCode: Int, method: String?) {
+        val params = Bundle()
+        params.putInt(PARAM_RESPONSE_CODE, responseCode)
+        method?.let { params.putString(PARAM_API_METHOD, it) }
+
+        logEvent(EVENT_API_REQUEST, params)
+    }
 
     override fun trackViewProblem(problem: Problem) = Bundle().run {
         putString(FirebaseAnalytics.Param.ITEM_ID, problem.problemId)
@@ -68,6 +82,10 @@ class RemoteAnalytics(appContext: Context, private val mixpanelAPI: MixpanelAPI)
         logEvent(EVENT_SHARE_PERSONAL_DATA, params)
     }
 
+    override fun trackConnectionType(connectionType: NetworkUtils.ConnectionType) {
+        setUserProperty(PARAM_CONNECTION_TYPE, connectionType.name)
+    }
+
     override fun trackLogIn() =
             logEvent(FirebaseAnalytics.Event.LOGIN, Bundle.EMPTY)
 
@@ -88,10 +106,6 @@ class RemoteAnalytics(appContext: Context, private val mixpanelAPI: MixpanelAPI)
         mixpanelAPI.timeEvent(name)
     }
 
-    private fun finishTimeEvent(name: String) {
-        mixpanelAPI.track(name)
-    }
-
     companion object {
         private const val PARAM_PROBLEM_STATUS = "problem_status"
         private const val PARAM_PHOTO_COUNT = "photo_count"
@@ -99,11 +113,16 @@ class RemoteAnalytics(appContext: Context, private val mixpanelAPI: MixpanelAPI)
         private const val PARAM_ENABLED = "enabled"
         private const val PARAM_REPORT_CATEGORY = "report_category"
         private const val PARAM_REPORT_FILTER_TARGET = "report_filter_target"
+        private const val PARAM_RESPONSE_CODE = "response_code"
+        private const val PARAM_API_METHOD = "api_method"
+        private const val PARAM_CONNECTION_TYPE = "connection_type"
+
 
         private const val EVENT_NEW_REPORT = "new_report"
         private const val EVENT_VALIDATION_ERROR = "validation_error"
         private const val EVENT_SHARE_PERSONAL_DATA = "personal_data"
         private const val EVENT_APPLY_REPORT_FILTER = "apply_report_filter"
+        private const val EVENT_API_REQUEST = "api_request"
 
         private const val PROPERTY_SHARE_PERSONAL_DATA = "share_personal_data"
     }

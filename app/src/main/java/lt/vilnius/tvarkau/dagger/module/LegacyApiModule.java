@@ -1,5 +1,7 @@
 package lt.vilnius.tvarkau.dagger.module;
 
+import android.app.Application;
+
 import com.facebook.stetho.okhttp3.StethoInterceptor;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
@@ -24,7 +26,9 @@ import javax.inject.Singleton;
 import dagger.Module;
 import dagger.Provides;
 import lt.vilnius.tvarkau.BuildConfig;
+import lt.vilnius.tvarkau.analytics.Analytics;
 import lt.vilnius.tvarkau.backend.LegacyApiService;
+import lt.vilnius.tvarkau.network.ApiTelemetryInterceptor;
 import lt.vilnius.tvarkau.network.TokenAuthenticator;
 import lt.vilnius.tvarkau.network.TokenInterceptor;
 import okhttp3.Interceptor;
@@ -43,7 +47,13 @@ public class LegacyApiModule {
 
     @Provides
     @Singleton
-    public OkHttpClient provideOkHttpClient() {
+    public ApiTelemetryInterceptor provedApiTelemetryInterceptor(Application application, Analytics analytics) {
+        return new ApiTelemetryInterceptor(application.getApplicationContext(), analytics);
+    }
+
+    @Provides
+    @Singleton
+    public OkHttpClient provideOkHttpClient(ApiTelemetryInterceptor apiTelemetryInterceptor) {
 
         OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
 
@@ -70,6 +80,7 @@ public class LegacyApiModule {
                     return chain.proceed(requestBuilder.build());
                 }
             })
+            .addInterceptor(apiTelemetryInterceptor)
             .build();
     }
 

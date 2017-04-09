@@ -13,7 +13,7 @@ class ConnectivityProviderImpl(
 
     override fun ensureConnected(): Single<Boolean> {
         return Single.defer {
-            val connected = NetworkUtils.isNetworkConnected(context)
+            val connected = NetworkUtils.isConnected(context)
 
             if (connected) {
                 Single.just(true)

@@ -70,7 +70,7 @@ class ProblemDetailFragment : BaseFragment(), ProblemImagesPagerAdapter.ProblemI
     }
 
     private fun getData() {
-        if (NetworkUtils.isNetworkConnected(activity)) {
+        if (NetworkUtils.isConnected(activity)) {
             val params = GetProblemParams(issueId)
 
             subscription = legacyApiService.getProblem(GetReportRequest(params))
